@@ -324,12 +324,17 @@
             document.getElementById('loading').style.display = 'flex';
             document.getElementById('winModal').style.display = 'none';
             stopConfetti(); resetHintButton(); moveHistory = [];
+            
+            // --- OTO DÜZELTME ÖZELLİĞİ ---
+            // Eğer 3 saniye içinde açılmazsa, localStorage'ı sil ve yenile
             setTimeout(() => {
                 if(document.getElementById('loading').style.display !== 'none' && !isActive) {
-                     localStorage.removeItem('duoLogicSaveV13');
-                     createSolvableLevel();
+                     console.log("Oto düzeltme devreye girdi.");
+                     localStorage.clear();
+                     location.reload();
                 }
-            }, 4000);
+            }, 3000);
+
             setTimeout(createSolvableLevel, 50);
         }
 
