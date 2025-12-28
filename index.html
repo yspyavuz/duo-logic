@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d1117">
+    <title>Duo Logic: Master</title>
+    <link rel="manifest" href='data:application/manifest+json;base64,eyJuYW1lIjoiRHVvIExvZ2ljIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZDExMTciLCJ0aGVtZV9jb2xvciI6IiMwZDExMTciLCJkaXNwbGF5IjoiZnVsbHNjcmVlbiIsIm9yaWVudGF0aW9uIjoicG9ydHJhaXQiLCJpY29ucyI6W3sic3JjIjoiaHR0cHM6Ly9mYXZpY29uLmlvL2Vtb2ppLWZhdmljb25zL2ZpcmUucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0='>
+    <style>
+        :root {
+            --bg-color: #0d1117; --cell-bg: #161b22; --cell-locked: #090c10; --grid-border: #30363d;
+            --fire: #ff7b72; --water: #79c0ff; --marker-bg: #30363d; --marker-text: #ffffff;
+            --error-stripe: rgba(255, 69, 58, 0.25); --error-border: #ff453a; --text-main: #c9d1d9;
+            --btn-bg: #21262d; --hint-color: #d29922; --grid-size: 6; 
+        }
+        body { 
+            background-color: var(--bg-color); color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            height: 100vh; overflow: hidden; padding-top: env(safe-area-inset-top, 10px); 
+            user-select: none; margin: 0; touch-action: manipulation; 
+        }
+        .header-row { width: 92%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 5px; flex: 0 0 auto; z-index: 2; }
+        .header-left { display: flex; gap: 10px; }
+        .icon-btn { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; padding: 0; opacity: 0.7; transition: 0.2s; }
+        .icon-btn:hover { opacity: 1; transform: scale(1.1); }
+        h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+        .top-bar { width: 92%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex: 0 0 auto; z-index: 2; }
+        .difficulty-selector { background: var(--btn-bg); border: 1px solid var(--grid-border); color: var(--text-main); padding: 5px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+        .timer { font-family: monospace; font-size: 15px; font-weight: 600; background: var(--btn-bg); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--grid-border); min-width: 45px; text-align: center; }
+        .grid-wrapper { flex: 0 0 auto; width: 100%; display: flex; justify-content: center; margin-bottom: 20px; z-index: 2; }
+        .grid-container { 
+            padding: 4px; background: var(--grid-border); border-radius: 8px; 
+            width: 90vw; max-width: 400px; aspect-ratio: 1 / 1; height: auto; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; transition: all 0.3s ease;
+        }
+        .grid { display: grid; width: 100%; height: 100%; grid-template-columns: repeat(var(--grid-size), 1fr); grid-template-rows: repeat(var(--grid-size), 1fr); gap: 2px; background-color: var(--grid-border); }
+        .cell { background-color: var(--cell-bg); display: flex; align-items: center; justify-content: center; font-size: clamp(18px, 5vw, 32px); cursor: pointer; position: relative; }
+        .cell:active { background-color: #1f242c; } .cell.locked { background-color: var(--cell-locked); } .cell.locked span { opacity: 0.5; filter: grayscale(0.4); }
+        .cell.error-highlight { box-shadow: inset 0 0 0 3px var(--error-border) !important; animation: pulse-error 1.5s infinite; z-index: 6; }
+        @keyframes pulse-error { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .fire { color: var(--fire); filter: drop-shadow(0 0 5px rgba(255,123,114,0.6)); transform: scale(1.1); animation: popIn 0.2s; }
+        .water { color: var(--water); filter: drop-shadow(0 0 5px rgba(121,192,255,0.6)); transform: scale(1.1); animation: popIn 0.2s; }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1.1); opacity: 1; } }
+        .marker { position: absolute; width: 20px; height: 20px; background: var(--marker-bg); border: 2px solid var(--bg-color); color: var(--marker-text); font-size: 14px; font-weight: 900; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; pointer-events: none; }
+        .mh { top: 50%; right: -10px; transform: translateY(-50%); } .mv { bottom: -10px; left: 50%; transform: translateX(-50%); }
+        .hint-focus { box-shadow: inset 0 0 0 3px var(--hint-color) !important; animation: pulse 1s infinite; z-index: 5; }
+        .bottom-section { width: 92%; max-width: 420px; flex: 1; display: flex; flex-direction: column; gap: 10px; z-index: 2; padding-bottom: 20px; }
+        .controls { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
+        .btn { flex: 1; padding: 12px 0; border-radius: 12px; background: var(--btn-bg); border: 1px solid var(--grid-border); color: var(--text-main); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; }
+        .btn:active { transform: scale(0.96); }
+        .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+        .alert-placeholder { flex: 1; position: relative; min-height: 60px; pointer-events: none; }
+        .alert-box { width: 100%; padding: 12px 15px; box-sizing: border-box; background: #1c1c1e; border-radius: 10px; font-size: 13px; line-height: 1.4; opacity: 0; transition: opacity 0.3s, transform 0.3s; border-left: 3px solid transparent; position: absolute; top: 0; left: 0; transform: translateY(10px); }
+        .alert-box.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .alert-box.error { border-color: var(--error-border); color: #ffbba9; } .alert-box.hint { border-color: var(--hint-color); color: #f2cc60; } .alert-box.info { border-color: var(--water); color: #a5d6ff; }
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(13,17,23,0.9); z-index: 100; backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; flex-direction: column; }
+        .modal-content { background: #161b22; padding: 25px; border-radius: 20px; border: 1px solid #30363d; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #8b949e; }
+        .modal h2 { margin-top: 0; color: #e6edf3; }
+        .modal h3 { color: var(--water); margin-bottom: 10px; font-size: 16px; }
+        .modal p, .modal li { color: #8b949e; line-height: 1.5; font-size: 14px; text-align: left; }
+        .modal ul { padding-left: 20px; margin-bottom: 20px; }
+        .stats-table { width: 100%; margin: 15px 0; border-collapse: collapse; color: var(--text-main); font-size: 14px; }
+        .stats-table td { padding: 8px; border-bottom: 1px solid #30363d; }
+        .stats-table td:last-child { text-align: right; font-weight: bold; color: var(--water); }
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:999; display:flex; justify-content:center; align-items:center; color:var(--water); font-weight:bold; flex-direction: column; gap: 15px; }
+        .spinner { width: 30px; height: 30px; border: 3px solid #30363d; border-top-color: var(--water); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
+        @media (min-width: 768px) {
+            .header-row, .top-bar, .bottom-section { max-width: 650px; }
+            .grid-container { max-width: 650px; }
+            .cell { font-size: 42px; }
+            h1 { font-size: 28px; }
+            .btn { font-size: 16px; padding: 15px 0; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confettiCanvas"></canvas>
+    <div id="loading"><div class="spinner"></div><div id="loadText">Hazırlanıyor...</div></div>
+    
+    <div class="header-row">
+        <div class="header-left">
+            <button class="icon-btn" onclick="showRules()">ℹ️</button>
+            <button class="icon-btn" onclick="showStats()">📊</button>
+        </div>
+        <h1>DUO LOGIC</h1>
+        <div style="width: 50px;"></div>
+    </div>
+
+    <div class="top-bar">
+         <div style="flex:1"></div>
+         <div style="display:flex; gap:5px;">
+             <select class="difficulty-selector" id="diffSelector" onchange="changeDifficulty(this.value)">
+                <option value="4">4x4</option>
+                <option value="6" selected>6x6</option>
+                <option value="8">8x8</option>
+            </select>
+            <div class="timer" id="timer">00:00</div>
+        </div>
+    </div>
+
+    <div class="grid-wrapper">
+        <div class="grid-container">
+            <div class="grid" id="grid"></div>
+        </div>
+    </div>
+
+    <div class="bottom-section">
+        <div class="controls">
+            <button class="btn" onclick="undoMove()"><span>↩️</span></button>
+            <button class="btn" onclick="getExplainableHint()" id="hintBtn" style="color:#79c0ff;"><span>💡</span> İpucu</button>
+            <button class="btn" onclick="resetAndInit()" style="color:#7ee787;"><span>⚡</span> Yeni</button>
+        </div>
+        <div class="alert-placeholder">
+            <div class="alert-box" id="alertBox"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <div style="font-size:60px; margin-bottom:15px;">🏆</div>
+            <h2 style="color:#e6edf3; margin-top:0;">Mükemmel!</h2>
+            <p style="text-align:center;">Mantıkla çözdün.</p>
+            <div style="background:#21262d; padding:10px; border-radius:8px; margin-bottom:20px;">
+                <span id="finalTime" style="font-weight:bold; font-family:monospace; font-size:18px; color:var(--water);"></span>
+            </div>
+            <button class="btn" onclick="resetAndInit()" style="width:100%; background:#238636; border-color:#2ea043; color:white;">Yeni Oyun</button>
+        </div>
+    </div>
+
+    <div class="modal" id="rulesModal">
+        <div class="modal-content" style="text-align: left;">
+            <span class="modal-close" onclick="closeModal('rulesModal')">×</span>
+            <h2 style="text-align: center;">Nasıl Oynanır?</h2>
+            <ul>
+                <li><strong>Denge:</strong> Her satır ve sütunda eşit sayıda <span style="color:var(--fire)">Ateş</span> ve <span style="color:var(--water)">Su</span> olmalıdır.</li>
+                <li><strong>Üçlü Yok:</strong> Yan yana veya üst üste 3 tane aynı renk gelemez. (Örn: 🔥🔥🔥)</li>
+                <li><strong>İşaretler:</strong> İki kare arasındaki sembollere dikkat et:
+                    <br><strong>(=)</strong> : İki kare aynı renktir.
+                    <br><strong>(x)</strong> : İki kare farklı renktir.
+                </li>
+            </ul>
+            <button class="btn" onclick="closeModal('rulesModal')" style="width:100%; background:#1f6feb; border-color:#1f6feb; color:white;">Anladım, Başla</button>
+        </div>
+    </div>
+
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('statsModal')">×</span>
+            <h2>İstatistikler</h2>
+            <table class="stats-table">
+                <tr><td>Oynanan Oyun</td><td id="stat-played">0</td></tr>
+                <tr><td>Kazanılan</td><td id="stat-wins">0</td></tr>
+                <tr><td>En İyi (4x4)</td><td id="stat-best-4">-</td></tr>
+                <tr><td>En İyi (6x6)</td><td id="stat-best-6">-</td></tr>
+                <tr><td>En İyi (8x8)</td><td id="stat-best-8">-</td></tr>
+            </table>
+            <button class="btn" onclick="closeModal('statsModal')">Kapat</button>
+        </div>
+    </div>
+
+    <script>
+        let SIZE = 6;
+        let grid = [], initial = [], solutionGrid = [], constraintsH = [], constraintsV = [];
+        let moveHistory = [], timerInt, sec = 0, isActive = false;
+        let errorCheckTimer = null, hintCooldown = false, saveTimeout = null;
+        let hintTimerInt = null;
+        let isPaused = false; 
+        
+        let stats = { played: 0, wins: 0, bestTimes: { 4: null, 6: null, 8: null } };
+        
+        function loadStats() {
+            const s = localStorage.getItem('duoLogicStats');
+            if(s) stats = JSON.parse(s);
+        }
+        function saveStats() {
+            localStorage.setItem('duoLogicStats', JSON.stringify(stats));
+            updateStatsUI();
+        }
+        function updateStatsUI() {
+            document.getElementById('stat-played').innerText = stats.played;
+            document.getElementById('stat-wins').innerText = stats.wins;
+            document.getElementById('stat-best-4').innerText = formatTime(stats.bestTimes[4]);
+            document.getElementById('stat-best-6').innerText = formatTime(stats.bestTimes[6]);
+            document.getElementById('stat-best-8').innerText = formatTime(stats.bestTimes[8]);
+        }
+        function formatTime(s) {
+            if(s === null) return "-";
+            let m = Math.floor(s/60).toString().padStart(2,'0');
+            let sc = (s%60).toString().padStart(2,'0');
+            return `${m}:${sc}`;
+        }
+        function recordWin(timeInSec) {
+            stats.wins++;
+            let currentBest = stats.bestTimes[SIZE];
+            if (currentBest === null || timeInSec < currentBest) {
+                stats.bestTimes[SIZE] = timeInSec;
+            }
+            saveStats();
+        }
+
+        const SEEDS = {
+            4: [[1,2,1,2],[2,1,2,1],[1,2,2,1],[2,1,1,2]],
+            6: [[1,2,2,1,2,1],[2,1,1,2,1,2],[2,1,2,1,2,1],[1,2,1,2,1,2],[1,2,1,1,2,2],[2,1,2,2,1,1]],
+            8: [[1,1,2,2,1,2,1,2],[2,2,1,1,2,1,2,1],[1,2,1,2,1,2,2,1],[2,1,2,1,2,1,1,2],[1,1,2,2,1,2,2,1],[2,2,1,1,2,1,1,2],[1,2,1,1,2,2,1,2],[2,1,2,2,1,1,2,1]]
+        };
+        
+        function triggerSave() { if(!isActive) return; clearTimeout(saveTimeout); saveTimeout = setTimeout(saveGame, 1000); }
+        function saveGame() { try { localStorage.setItem('duoLogicSaveV13', JSON.stringify({ grid, initial, solutionGrid, constraintsH, constraintsV, sec, SIZE, moveHistory, timestamp: Date.now() })); } catch(e) {} }
+        function loadGame() {
+            const saved = localStorage.getItem('duoLogicSaveV13');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    if(Date.now() - state.timestamp > 86400000) return false;
+                    if(state.grid && state.grid.length === state.SIZE) {
+                        grid = state.grid; initial = state.initial; solutionGrid = state.solutionGrid;
+                        constraintsH = state.constraintsH; constraintsV = state.constraintsV;
+                        sec = state.sec; SIZE = state.SIZE; moveHistory = state.moveHistory || [];
+                        document.getElementById('diffSelector').value = SIZE; document.documentElement.style.setProperty('--grid-size', SIZE);
+                        drawGrid(); isActive = true; resetTimer(false); showAlert("Oyun yüklendi.", "info"); setTimeout(hideAlert, 2000); return true;
+                    }
+                } catch(e) {}
+            } return false;
+        }
+        function clearSave() { localStorage.removeItem('duoLogicSaveV13'); }
+        function changeDifficulty(val) { SIZE = parseInt(val); document.documentElement.style.setProperty('--grid-size', SIZE); initGame(); }
+        function resetAndInit() { clearSave(); initGame(); }
+        
+        function checkCellLogic(g, r, c) {
+            if(c>1 && g[r][c-1]===g[r][c-2] && g[r][c-1]!==0) return {val: g[r][c-1]===1?2:1, msg: "Solunda iki aynı taş var"};
+            if(c<SIZE-2 && g[r][c+1]===g[r][c+2] && g[r][c+1]!==0) return {val: g[r][c+1]===1?2:1, msg: "Sağında iki aynı taş var"};
+            if(r>1 && g[r-1][c]===g[r-2][c] && g[r-1][c]!==0) return {val: g[r-1][c]===1?2:1, msg: "Üstünde iki aynı taş var"};
+            if(r<SIZE-2 && g[r+1][c]===g[r+2][c] && g[r+1][c]!==0) return {val: g[r+1][c]===1?2:1, msg: "Altında iki aynı taş var"};
+            if(c>0 && c<SIZE-1 && g[r][c-1]===g[r][c+1] && g[r][c-1]!==0) return {val: g[r][c-1]===1?2:1, msg: "İki aynı taşın ortası farklı olmalı"};
+            if(r>0 && r<SIZE-1 && g[r-1][c]===g[r+1][c] && g[r-1][c]!==0) return {val: g[r-1][c]===1?2:1, msg: "İki aynı taşın ortası farklı olmalı"};
+            
+            let rCounts = [0,0,0]; for(let k=0; k<SIZE; k++) rCounts[g[r][k]]++;
+            if(rCounts[1] === SIZE/2) return {val: 2, msg: `Satırda ${SIZE/2} Ateş var, kalanı Su`};
+            if(rCounts[2] === SIZE/2) return {val: 1, msg: `Satırda ${SIZE/2} Su var, kalanı Ateş`};
+            
+            let cCounts = [0,0,0]; for(let k=0; k<SIZE; k++) cCounts[g[k][c]]++;
+            if(cCounts[1] === SIZE/2) return {val: 2, msg: `Sütunda ${SIZE/2} Ateş var, kalanı Su`};
+            if(cCounts[2] === SIZE/2) return {val: 1, msg: `Sütunda ${SIZE/2} Su var, kalanı Ateş`};
+            
+            if(c<SIZE-1 && constraintsH[r][c] && g[r][c+1]!==0) return {val: constraintsH[r][c]===1 ? g[r][c+1] : (g[r][c+1]===1?2:1), msg: "İşaret kuralı"};
+            if(c>0 && constraintsH[r][c-1] && g[r][c-1]!==0) return {val: constraintsH[r][c-1]===1 ? g[r][c-1] : (g[r][c-1]===1?2:1), msg: "İşaret kuralı"};
+            if(r<SIZE-1 && constraintsV[r][c] && g[r+1][c]!==0) return {val: constraintsV[r][c]===1 ? g[r+1][c] : (g[r+1][c]===1?2:1), msg: "İşaret kuralı"};
+            if(r>0 && constraintsV[r-1][c] && g[r-1][c]!==0) return {val: constraintsV[r-1][c]===1 ? g[r-1][c] : (g[r-1][c]===1?2:1), msg: "İşaret kuralı"};
+            return null;
+        }
+
+        function solveByHumanLogic(startGrid) {
+            let tempG = startGrid.map(row => [...row]);
+            let changed = true;
+            while(changed) {
+                changed = false;
+                for(let r=0; r<SIZE; r++) {
+                    for(let c=0; c<SIZE; c++) {
+                        if(tempG[r][c] !== 0) continue;
+                        let hint = checkCellLogic(tempG, r, c);
+                        if(hint) { tempG[r][c] = hint.val; changed = true; }
+                    }
+                }
+            }
+            return !tempG.some(row => row.includes(0));
+        }
+
+        function generateInstantSolution() {
+            let base = JSON.parse(JSON.stringify(SEEDS[SIZE]));
+            if(Math.random()>0.5) for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) base[r][c] = base[r][c]===1?2:1;
+            if(Math.random()>0.5) base.reverse(); if(Math.random()>0.5) base.forEach(row => row.reverse());
+            if(Math.random()>0.5) { let n=Array(SIZE).fill().map(()=>Array(SIZE).fill(0)); for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) n[c][r]=base[r][c]; base=n; }
+            return base;
+        }
+
+        function generateConstraints(sol) {
+            let h=Array(SIZE).fill().map(()=>Array(SIZE-1).fill(0)), v=Array(SIZE-1).fill().map(()=>Array(SIZE).fill(0));
+            let count=Math.floor(SIZE*1.5);
+            for(let i=0; i<count; i++) {
+                if(Math.random()>0.5) { let r=Math.floor(Math.random()*SIZE), c=Math.floor(Math.random()*(SIZE-1)); h[r][c]=sol[r][c]===sol[r][c+1]?1:2; }
+                else { let r=Math.floor(Math.random()*(SIZE-1)), c=Math.floor(Math.random()*SIZE); v[r][c]=sol[r][c]===sol[r+1][c]?1:2; }
+            }
+            return {h,v};
+        }
+
+        async function createSolvableLevel() {
+            try {
+                stats.played++;
+                saveStats();
+                solutionGrid = generateInstantSolution();
+                let cons = generateConstraints(solutionGrid);
+                constraintsH = cons.h; constraintsV = cons.v;
+                let puzzle = solutionGrid.map(row => [...row]);
+                let coords = [];
+                for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) coords.push({r,c});
+                for(let i=coords.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [coords[i],coords[j]]=[coords[j],coords[i]]; }
+                const batchSize = 10; 
+                for(let k=0; k<coords.length; k++) {
+                    if(k%batchSize===0) await new Promise(r=>setTimeout(r,0));
+                    let r=coords[k].r, c=coords[k].c, val=puzzle[r][c];
+                    puzzle[r][c] = 0;
+                    if(!solveByHumanLogic(puzzle)) puzzle[r][c] = val; 
+                }
+                initial = puzzle;
+                for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE-1; c++) if(constraintsH[r][c] && initial[r][c] && initial[r][c+1]) constraintsH[r][c]=0;
+                for(let r=0; r<SIZE-1; r++) for(let c=0; c<SIZE; c++) if(constraintsV[r][c] && initial[r][c] && initial[r+1][c]) constraintsV[r][c]=0;
+                grid = initial.map(row => [...row]);
+                isActive = true; drawGrid(); resetTimer(true); hideAlert(); triggerSave();
+                document.getElementById('loading').style.display = 'none';
+            } catch(e) { 
+                console.error(e); 
+                localStorage.removeItem('duoLogicSaveV13');
+                location.reload(); 
+            }
+        }
+
+        function initGame() {
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('winModal').style.display = 'none';
+            stopConfetti(); resetHintButton(); moveHistory = [];
+            setTimeout(() => {
+                if(document.getElementById('loading').style.display !== 'none' && !isActive) {
+                     localStorage.removeItem('duoLogicSaveV13');
+                     createSolvableLevel();
+                }
+            }, 4000);
+            setTimeout(createSolvableLevel, 50);
+        }
+
+        function drawGrid() {
+            const el = document.getElementById('grid'); el.innerHTML = '';
+            for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) {
+                let div = document.createElement('div'); div.className = 'cell';
+                if(c<SIZE-1 && constraintsH[r][c]) { let m=document.createElement('div'); m.className='marker mh'; m.innerText=constraintsH[r][c]===1?'=':'×'; div.appendChild(m); }
+                if(r<SIZE-1 && constraintsV[r][c]) { let m=document.createElement('div'); m.className='marker mv'; m.innerText=constraintsV[r][c]===1?'=':'×'; div.appendChild(m); }
+                if(initial[r][c]!==0) { div.classList.add('locked'); updateCellVisual(div, initial[r][c]); }
+                else { div.onclick = () => move(r, c); if(grid[r][c]!==0) updateCellVisual(div, grid[r][c]); }
+                el.appendChild(div);
+            }
+        }
+        
+        function move(r, c) {
+            if(!isActive) return; if(navigator.vibrate) navigator.vibrate(5);
+            hideAlert(); clearHighlights();
+            moveHistory.push({r, c, prev: grid[r][c]});
+            grid[r][c] = grid[r][c]===0 ? 2 : (grid[r][c]===2 ? 1 : 0);
+            updateCellVisual(document.getElementById('grid').children[r*SIZE+c], grid[r][c]);
+            triggerSave();
+            if(errorCheckTimer) clearTimeout(errorCheckTimer);
+            const isFull = !grid.some(row => row.includes(0));
+            if(isFull) {
+                errorCheckTimer = setTimeout(() => { checkRealTimeErrors(); checkWinCondition(); }, 750);
+            } else {
+                errorCheckTimer = setTimeout(()=>{ checkRealTimeErrors(); checkWinCondition(); }, 2500);
+            }
+        }
+        
+        function updateCellVisual(div, val) {
+            const s = div.querySelectorAll('span'); s.forEach(x=>x.remove()); div.classList.remove('fire','water');
+            if(val===1) div.innerHTML+='<span class="fire">🔥</span>'; else if(val===2) div.innerHTML+='<span class="water">💧</span>';
+        }
+        function undoMove() {
+            if(!isActive || moveHistory.length===0) return;
+            let last = moveHistory.pop(); grid[last.r][last.c] = last.prev;
+            updateCellVisual(document.getElementById('grid').children[last.r*SIZE+last.c], grid[last.r][last.c]);
+            triggerSave(); hideAlert(); clearHighlights();
+        }
+
+        function getAllLogicalHints(g) {
+            let hints = [];
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    if(g[r][c] !== 0) continue;
+                    let logic = checkCellLogic(g, r, c);
+                    if(logic) hints.push({r, c, msg: logic.msg});
+                }
+            }
+            return hints;
+        }
+
+        function getExplainableHint() {
+            if(!isActive || hintCooldown) return; 
+            clearHighlights(); hideAlert(); startHintCooldown();
+            let err = getErrorData(grid); 
+            if(err) { showError(err); return; }
+            for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) {
+                if(grid[r][c] !== 0 && grid[r][c] !== solutionGrid[r][c]) { 
+                    highlight(r,c,'error-highlight'); showAlert("Bu karedeki hamlen mantıksız.", "error"); return; 
+                }
+            }
+            let possibleHints = getAllLogicalHints(grid);
+            if(possibleHints.length > 0) {
+                let hint = possibleHints[Math.floor(Math.random() * possibleHints.length)];
+                highlight(hint.r, hint.c, 'hint-focus'); showAlert("💡 Mantık İpucu: " + hint.msg, "hint");
+            } else { showAlert("Oyun bitmiş olmalı!", "info"); }
+        }
+
+        function getErrorData(g) {
+            for(let i=0; i<SIZE; i++) {
+                for(let j=0; j<SIZE-2; j++) {
+                    if(g[i][j]&&g[i][j]===g[i][j+1]&&g[i][j]===g[i][j+2]) return {msg:`Satır ${i+1}'de 3'lü`, cells:[{r:i,c:j},{r:i,c:j+1},{r:i,c:j+2}]};
+                    if(g[j][i]&&g[j][i]===g[j+1][i]&&g[j][i]===g[j+2][i]) return {msg:`Sütun ${i+1}'de 3'lü`, cells:[{r:j,c:i},{r:j+1,c:i},{r:j+2,c:i}]};
+                }
+                let r1=0,r2=0,c1=0,c2=0;
+                for(let k=0; k<SIZE; k++) { g[i][k]===1?r1++:g[i][k]===2?r2++:0; g[k][i]===1?c1++:g[k][i]===2?c2++:0; }
+                if(r1>SIZE/2) return {msg:`Satır ${i+1}'de fazla Ateş`, cells:g[i].map((_,c)=>({r:i,c}))};
+                if(r2>SIZE/2) return {msg:`Satır ${i+1}'de fazla Su`, cells:g[i].map((_,c)=>({r:i,c}))};
+                if(c1>SIZE/2) return {msg:`Sütun ${i+1}'de fazla Ateş`, cells:g.map((_,r)=>({r,c:i}))};
+                if(c2>SIZE/2) return {msg:`Sütun ${i+1}'de fazla Su`, cells:g.map((_,r)=>({r,c:i}))};
+            }
+            for(let r=0; r<SIZE; r++) for(let c=0; c<SIZE; c++) {
+                if(c<SIZE-1 && constraintsH[r][c] && g[r][c] && g[r][c+1]) if((constraintsH[r][c]===1 && g[r][c]!==g[r][c+1]) || (constraintsH[r][c]===2 && g[r][c]===g[r][c+1])) return {msg:"İşaret hatası", cells:[{r,c},{r,c:c+1}]};
+                if(r<SIZE-1 && constraintsV[r][c] && g[r][c] && g[r+1][c]) if((constraintsV[r][c]===1 && g[r][c]!==g[r+1][c]) || (constraintsV[r][c]===2 && g[r][c]===g[r+1][c])) return {msg:"İşaret hatası", cells:[{r,c},{r:r+1,c}]};
+            }
+            return null;
+        }
+        function checkRealTimeErrors() { let err = getErrorData(grid); if(err) showError(err); }
+        function checkWinCondition() {
+            if(!grid.some(r=>r.includes(0)) && !getErrorData(grid)) {
+                for(let i=0; i<SIZE; i++) if(grid[i].filter(x=>x===1).length!==SIZE/2) return;
+                recordWin(sec);
+                document.getElementById('finalTime').innerText = document.getElementById('timer').innerText;
+                document.getElementById('winModal').style.display = 'flex';
+                if(navigator.vibrate) navigator.vibrate([100,50,100]); startConfetti(); isActive=false; clearInterval(timerInt); clearSave();
+            }
+        }
+        
+        function showError(err) { 
+            showAlert(err.msg, 'error'); if(navigator.vibrate) navigator.vibrate(200); 
+            err.cells.forEach(c=>highlight(c.r,c.c,'error-highlight')); setTimeout(clearHighlights, 2500);
+        }
+        
+        function highlight(r,c,t) { document.getElementById('grid').children[r*SIZE+c].classList.add(t); }
+        function clearHighlights() { document.querySelectorAll('.error-highlight, .hint-focus').forEach(e=>e.classList.remove('error-highlight','hint-focus')); }
+        function showAlert(msg,t) { const b=document.getElementById('alertBox'); b.innerText=msg; b.className=`alert-box visible ${t}`; }
+        function hideAlert() { document.getElementById('alertBox').className='alert-box'; }
+        
+        function startHintCooldown() { 
+            hintCooldown = true; let btn = document.getElementById('hintBtn'); let cooldownSec = 3;
+            btn.disabled = true; btn.style.opacity = 0.5; btn.innerHTML = `⏳ ${cooldownSec}`;
+            clearInterval(hintTimerInt);
+            hintTimerInt = setInterval(() => {
+                cooldownSec--;
+                if(cooldownSec <= 0) { clearInterval(hintTimerInt); hintCooldown = false; btn.disabled = false; btn.style.opacity = 1; btn.innerHTML = `<span>💡</span> İpucu`; } 
+                else { btn.innerHTML = `⏳ ${cooldownSec}`; }
+            }, 1000);
+        }
+        
+        function resetTimer(reset) { 
+            clearInterval(timerInt); if(reset) sec=0; updateTimerDisplay(); 
+            timerInt=setInterval(()=>{ if(!isActive || isPaused) return; sec++; updateTimerDisplay(); triggerSave(); },1000); 
+        }
+        function updateTimerDisplay() { document.getElementById('timer').innerText = formatTime(sec); }
+        
+        function resetHintButton() { 
+            clearInterval(hintTimerInt); let btn = document.getElementById('hintBtn');
+            btn.disabled = false; btn.style.opacity = 1; btn.innerHTML = `<span>💡</span> İpucu`; hintCooldown = false; 
+        }
+        
+        let confettiCtx=document.getElementById('confettiCanvas').getContext('2d'), confettiAnimation=null;
+        function startConfetti() {
+            const cvs=document.getElementById('confettiCanvas'); cvs.width=window.innerWidth; cvs.height=window.innerHeight;
+            let parts=[]; for(let i=0; i<100; i++) parts.push({x:Math.random()*cvs.width, y:Math.random()*cvs.height-cvs.height, c:`hsl(${Math.random()*360},100%,50%)`, s:Math.random()*10+5, v:Math.random()*4+2});
+            function anim() { confettiCtx.clearRect(0,0,cvs.width,cvs.height); parts.forEach(p=>{p.y+=p.v; confettiCtx.fillStyle=p.c; confettiCtx.fillRect(p.x,p.y,p.s,p.s); if(p.y>cvs.height)p.y=-10;}); confettiAnimation=requestAnimationFrame(anim); }
+            if(!confettiAnimation) anim();
+        }
+        function stopConfetti() { if(confettiAnimation) cancelAnimationFrame(confettiAnimation); confettiAnimation=null; confettiCtx.clearRect(0,0,9999,9999); }
+        
+        function showRules() { isPaused = true; document.getElementById('rulesModal').style.display = 'flex'; }
+        function showStats() { isPaused = true; updateStatsUI(); document.getElementById('statsModal').style.display = 'flex'; }
+        function closeModal(id) { isPaused = false; document.getElementById(id).style.display = 'none'; }
+        
+        window.onload = function() { 
+            loadStats();
+            if (!loadGame()) { if(stats.played === 0) showRules(); initGame(); }
+        };
+    </script>
+</body>
+</html>
