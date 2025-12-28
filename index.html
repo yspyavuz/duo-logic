@@ -212,6 +212,7 @@
         
         function triggerSave() { if(!isActive) return; clearTimeout(saveTimeout); saveTimeout = setTimeout(saveGame, 1000); }
         function saveGame() { try { localStorage.setItem('duoLogicSaveV13', JSON.stringify({ grid, initial, solutionGrid, constraintsH, constraintsV, sec, SIZE, moveHistory, timestamp: Date.now() })); } catch(e) {} }
+        
         function loadGame() {
             const saved = localStorage.getItem('duoLogicSaveV13');
             if (saved) {
@@ -223,11 +224,16 @@
                         constraintsH = state.constraintsH; constraintsV = state.constraintsV;
                         sec = state.sec; SIZE = state.SIZE; moveHistory = state.moveHistory || [];
                         document.getElementById('diffSelector').value = SIZE; document.documentElement.style.setProperty('--grid-size', SIZE);
+                        
+                        // BURASI EKLENDI: Kayıt yüklendiğinde yükleme ekranını gizle
+                        document.getElementById('loading').style.display = 'none';
+                        
                         drawGrid(); isActive = true; resetTimer(false); showAlert("Oyun yüklendi.", "info"); setTimeout(hideAlert, 2000); return true;
                     }
                 } catch(e) {}
             } return false;
         }
+
         function clearSave() { localStorage.removeItem('duoLogicSaveV13'); }
         function changeDifficulty(val) { SIZE = parseInt(val); document.documentElement.style.setProperty('--grid-size', SIZE); initGame(); }
         function resetAndInit() { clearSave(); initGame(); }
@@ -324,17 +330,6 @@
             document.getElementById('loading').style.display = 'flex';
             document.getElementById('winModal').style.display = 'none';
             stopConfetti(); resetHintButton(); moveHistory = [];
-            
-            // --- OTO DÜZELTME ÖZELLİĞİ ---
-            // Eğer 3 saniye içinde açılmazsa, localStorage'ı sil ve yenile
-            setTimeout(() => {
-                if(document.getElementById('loading').style.display !== 'none' && !isActive) {
-                     console.log("Oto düzeltme devreye girdi.");
-                     localStorage.clear();
-                     location.reload();
-                }
-            }, 3000);
-
             setTimeout(createSolvableLevel, 50);
         }
 
@@ -481,9 +476,25 @@
         function showStats() { isPaused = true; updateStatsUI(); document.getElementById('statsModal').style.display = 'flex'; }
         function closeModal(id) { isPaused = false; document.getElementById(id).style.display = 'none'; }
         
+        // --- GLOBAL FAILSAFE ---
+        // Oyun ne olursa olsun 3 saniye içinde açılmazsa, otomatik olarak sıfırla ve yeniden başlat.
         window.onload = function() { 
             loadStats();
-            if (!loadGame()) { if(stats.played === 0) showRules(); initGame(); }
+            
+            // Failsafe sayacı başlat
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading');
+                if (loadingScreen && loadingScreen.style.display !== 'none' && !isActive) {
+                    console.warn("Oyun takıldı, otomatik kurtarma başlatılıyor...");
+                    localStorage.removeItem('duoLogicSaveV13');
+                    location.reload();
+                }
+            }, 3000); // 3 saniye bekle
+
+            if (!loadGame()) { 
+                if(stats.played === 0) showRules(); 
+                initGame(); 
+            }
         };
     </script>
 </body>
