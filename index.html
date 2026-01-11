@@ -15,7 +15,7 @@
             --error-stripe: rgba(255, 69, 58, 0.25); --error-border: #ff453a; --text-main: #c9d1d9;
             --btn-bg: #21262d; --hint-color: #d29922; --grid-size: 6; --success: #7ee787;
         }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             background-color: var(--bg-color); color: var(--text-main); 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
@@ -50,6 +50,14 @@
             animation: pulse-error 1.5s infinite; z-index: 6; 
         }
         @keyframes pulse-error { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        @keyframes hint-glow {
+            0% { box-shadow: 0 0 5px rgba(210, 153, 34, 0.2); }
+            50% { box-shadow: 0 0 15px rgba(210, 153, 34, 0.5); }
+            100% { box-shadow: 0 0 5px rgba(210, 153, 34, 0.2); }
+        }
+        #hintBtn:not(:disabled) { animation: hint-glow 2s infinite; }
+
         .cell.hint-focus { 
             box-shadow: inset 0 0 0 3px var(--hint-color) !important; 
             animation: pulse-hint 1.5s ease-in-out infinite; z-index: 5;
@@ -73,8 +81,8 @@
         .cell.hint-arrow-left::after { border-right-color: var(--hint-color); left: -16px; top: 50%; transform: translateY(-50%); }
         .cell.hint-arrow-right::after { border-left-color: var(--hint-color); right: -16px; top: 50%; transform: translateY(-50%); }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
-        .fire { color: var(--fire); filter: drop-shadow(0 0 5px rgba(255,123,114,0.6)); transform: scale(1.1); animation: popIn 0.2s; }
-        .water { color: var(--water); filter: drop-shadow(0 0 5px rgba(121,192,255,0.6)); transform: scale(1.1); animation: popIn 0.2s; }
+        .fire { color: var(--fire); filter: drop-shadow(0 0 3px rgba(255,123,114,0.4)); transform: scale(1.1); animation: popIn 0.2s; }
+        .water { color: var(--water); filter: drop-shadow(0 0 3px rgba(121,192,255,0.4)); transform: scale(1.1); animation: popIn 0.2s; }
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1.1); opacity: 1; } }
         .marker { 
             position: absolute; width: 20px; height: 20px; background: var(--marker-bg); 
@@ -619,13 +627,13 @@
                     const j=Math.floor(Math.random()*(i+1)); 
                     [coords[i],coords[j]]=[coords[j],coords[i]]; 
                 }
-                const batchSize = 5; 
+                const batchSize = 6; 
                 let removedCount = 0;
                 const minFilled = Math.floor(SIZE * SIZE * 0.20); 
                 const maxToRemove = SIZE * SIZE - minFilled;
                 
                 for(let k=0; k<coords.length; k++) {
-                    if(k%batchSize===0) await new Promise(r=>setTimeout(r,0));
+                    if(k % batchSize === 0) await new Promise(r => requestAnimationFrame(r));
                     let r=coords[k].r, c=coords[k].c, val=puzzle[r][c];
                     puzzle[r][c] = 0;
                     if(!solveByHumanLogic(puzzle)) { puzzle[r][c] = val; } 
@@ -698,11 +706,8 @@
             triggerSave();
             if(errorCheckTimer) clearTimeout(errorCheckTimer);
             const isFull = !grid.some(row => row.includes(0));
-            if(isFull) {
-                errorCheckTimer = setTimeout(() => { checkRealTimeErrors(); checkWinCondition(); }, 750);
-            } else {
-                errorCheckTimer = setTimeout(()=>{ checkRealTimeErrors(); checkWinCondition(); }, 2500);
-            }
+            let checkDelay = isFull ? 750 : 1200;
+            errorCheckTimer = setTimeout(() => { checkRealTimeErrors(); checkWinCondition(); }, checkDelay);
         }
         
         function updateCellVisual(div, val) {
