@@ -50,7 +50,6 @@
             animation: pulse-error 1.5s infinite; z-index: 6; 
         }
         @keyframes pulse-error { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        
         .cell.hint-focus { 
             box-shadow: inset 0 0 0 3px var(--hint-color) !important; 
             animation: pulse-hint 1.5s ease-in-out infinite; z-index: 5;
@@ -60,13 +59,11 @@
             0%, 100% { box-shadow: inset 0 0 0 3px var(--hint-color), 0 0 15px rgba(210, 153, 34, 0.4); } 
             50% { box-shadow: inset 0 0 0 3px var(--hint-color), 0 0 25px rgba(210, 153, 34, 0.7); } 
         }
-        
         .cell.hint-related { 
             background-color: rgba(210, 153, 34, 0.08) !important;
             box-shadow: inset 0 0 0 2px rgba(210, 153, 34, 0.3);
             z-index: 4;
         }
-        
         .cell.hint-arrow::after {
             content: ''; position: absolute; width: 0; height: 0;
             border: 8px solid transparent; animation: bounce 1s ease-in-out infinite;
@@ -76,11 +73,9 @@
         .cell.hint-arrow-left::after { border-right-color: var(--hint-color); left: -16px; top: 50%; transform: translateY(-50%); }
         .cell.hint-arrow-right::after { border-left-color: var(--hint-color); right: -16px; top: 50%; transform: translateY(-50%); }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
-        
         .fire { color: var(--fire); filter: drop-shadow(0 0 5px rgba(255,123,114,0.6)); transform: scale(1.1); animation: popIn 0.2s; }
         .water { color: var(--water); filter: drop-shadow(0 0 5px rgba(121,192,255,0.6)); transform: scale(1.1); animation: popIn 0.2s; }
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1.1); opacity: 1; } }
-        
         .marker { 
             position: absolute; width: 20px; height: 20px; background: var(--marker-bg); 
             border: 2px solid var(--bg-color); color: var(--marker-text); font-size: 14px; 
@@ -89,7 +84,6 @@
         }
         .mh { top: 50%; right: -10px; transform: translateY(-50%); }
         .mv { bottom: -10px; left: 50%; transform: translateX(-50%); }
-        
         .bottom-section { width: 92%; max-width: 420px; flex: 1; display: flex; flex-direction: column; gap: 10px; z-index: 2; padding-bottom: 20px; }
         .controls { display: flex; gap: 10px; width: 100%; margin-top: 5px; }
         .btn { 
@@ -100,7 +94,6 @@
         }
         .btn:active { transform: scale(0.96); }
         .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
-        
         .alert-placeholder { flex: 1; position: relative; min-height: 80px; pointer-events: none; }
         .alert-box { 
             width: 100%; padding: 12px 15px; box-sizing: border-box; background: #1c1c1e; 
@@ -113,10 +106,8 @@
         .alert-box.hint { border-color: var(--hint-color); color: #f2cc60; }
         .alert-box.info { border-color: var(--water); color: #a5d6ff; }
         .alert-box.success { border-color: var(--success); color: #aff5b4; }
-        
         .hint-title { font-weight: bold; margin-bottom: 6px; font-size: 14px; display: flex; align-items: center; gap: 5px; }
         .hint-content { font-size: 13px; opacity: 0.9; }
-        
         .modal { 
             position: fixed; top:0; left:0; width:100%; height:100%; 
             background: rgba(13,17,23,0.95); z-index: 100; backdrop-filter: blur(10px); 
@@ -133,11 +124,9 @@
         .modal p, .modal li { color: #8b949e; line-height: 1.6; font-size: 14px; text-align: left; }
         .modal ul { padding-left: 20px; margin-bottom: 20px; }
         .modal ul li { margin-bottom: 8px; }
-        
         .stats-table { width: 100%; margin: 15px 0; border-collapse: collapse; color: var(--text-main); font-size: 14px; }
         .stats-table td { padding: 8px; border-bottom: 1px solid #30363d; }
         .stats-table td:last-child { text-align: right; font-weight: bold; color: var(--water); }
-        
         #loading { 
             position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); 
             z-index:999; display:flex; justify-content:center; align-items:center; 
@@ -272,7 +261,6 @@
         
         let stats = { played: 0, wins: 0, bestTimes: { 4: null, 6: null, 8: null } };
         
-        // Stats Logic
         function loadStats() {
             const s = localStorage.getItem('duoLogicStats');
             if(s) stats = JSON.parse(s);
@@ -309,7 +297,6 @@
             8: [[1,1,2,2,1,2,1,2],[2,2,1,1,2,1,2,1],[1,2,1,2,1,2,2,1],[2,1,2,1,2,1,1,2],[1,1,2,2,1,2,2,1],[2,2,1,1,2,1,1,2],[1,2,1,1,2,2,1,2],[2,1,2,2,1,1,2,1]]
         };
         
-        // Storage Logic
         function triggerSave() { 
             if(!isActive) return; 
             clearTimeout(saveTimeout); 
@@ -393,74 +380,90 @@
             triggerSave();
         }
         
-        // Logic Motor
         const PRIORITY = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
-        
-        function getPriorityLabel(p) {
-            if(p === PRIORITY.CRITICAL) return 'critical';
-            if(p === PRIORITY.HIGH) return 'high';
-            if(p === PRIORITY.MEDIUM) return 'medium';
-            return 'low';
-        }
-        
-        function getPriorityText(p) {
-            if(p === PRIORITY.CRITICAL) return 'ACİL';
-            if(p === PRIORITY.HIGH) return 'YÜKSEK';
-            if(p === PRIORITY.MEDIUM) return 'ORTA';
-            return 'DÜŞÜK';
-        }
 
         function checkAdvancedCellLogic(g, r, c) {
             let hints = [];
             
             if(c>1 && g[r][c-1]===g[r][c-2] && g[r][c-1]!==0) {
-                hints.push({ msg: `Soldaki iki kareye dikkat et`, priority: PRIORITY.CRITICAL, related: [{r,c:c-1}, {r,c:c-2}], arrows: ['left'] });
+                hints.push({ msg: `Yan yana üçlü oluşmasını engellemelisin.`, priority: PRIORITY.CRITICAL, related: [{r,c:c-1}, {r,c:c-2}], arrows: ['left'] });
             }
             if(c<SIZE-2 && g[r][c+1]===g[r][c+2] && g[r][c+1]!==0) {
-                hints.push({ msg: `Sağdaki iki kareye dikkat et`, priority: PRIORITY.CRITICAL, related: [{r,c:c+1}, {r,c:c+2}], arrows: ['right'] });
+                hints.push({ msg: `Yan yana üçlü oluşmasını engellemelisin.`, priority: PRIORITY.CRITICAL, related: [{r,c:c+1}, {r,c:c+2}], arrows: ['right'] });
             }
             if(r>1 && g[r-1][c]===g[r-2][c] && g[r-1][c]!==0) {
-                hints.push({ msg: `Üstteki iki kareye dikkat et`, priority: PRIORITY.CRITICAL, related: [{r:r-1,c}, {r:r-2,c}], arrows: ['up'] });
+                hints.push({ msg: `Üst üste üçlü oluşmasını engellemelisin.`, priority: PRIORITY.CRITICAL, related: [{r:r-1,c}, {r:r-2,c}], arrows: ['up'] });
             }
             if(r<SIZE-2 && g[r+1][c]===g[r+2][c] && g[r+1][c]!==0) {
-                hints.push({ msg: `Alttaki iki kareye dikkat et`, priority: PRIORITY.CRITICAL, related: [{r:r+1,c}, {r:r+2,c}], arrows: ['down'] });
+                hints.push({ msg: `Üst üste üçlü oluşmasını engellemelisin.`, priority: PRIORITY.CRITICAL, related: [{r:r+1,c}, {r:r+2,c}], arrows: ['down'] });
             }
             
             if(c>0 && c<SIZE-1 && g[r][c-1]===g[r][c+1] && g[r][c-1]!==0) {
-                hints.push({ msg: `Sağ ve sol komşuların aynı olduğuna dikkat et`, priority: PRIORITY.HIGH, related: [{r,c:c-1}, {r,c:c+1}], arrows: ['left', 'right'] });
+                hints.push({ msg: `Aynı iki sembolün arasına zıt olanı yerleştirerek üçlü oluşumunu engelle.`, priority: PRIORITY.HIGH, related: [{r,c:c-1}, {r,c:c+1}], arrows: ['left', 'right'] });
             }
             if(r>0 && r<SIZE-1 && g[r-1][c]===g[r+1][c] && g[r-1][c]!==0) {
-                hints.push({ msg: `Üst ve alt komşuların aynı olduğuna dikkat et`, priority: PRIORITY.HIGH, related: [{r:r-1,c}, {r:r+1,c}], arrows: ['up', 'down'] });
+                hints.push({ msg: `Aynı iki sembolün arasına zıt olanı yerleştirerek üçlü oluşumunu engelle.`, priority: PRIORITY.HIGH, related: [{r:r-1,c}, {r:r+1,c}], arrows: ['up', 'down'] });
+            }
+
+            const symbols = [1, 2];
+            for (let testVal of symbols) {
+                let otherVal = testVal === 1 ? 2 : 1;
+                let testGrid = g.map(row => [...row]);
+                testGrid[r][c] = testVal;
+
+                if (wouldCauseTripleElsewhere(testGrid, r, c, testVal)) {
+                    let icon = otherVal === 1 ? "🔥" : "💧";
+                    let testIcon = testVal === 1 ? "🔥" : "💧";
+                    hints.push({ 
+                        msg: `Bu hücre ${testIcon} olduğu durumda, ardışık üçlü kuralı bozuluyor. Bu yüzden bu hücre ${icon} olmalı.`, 
+                        priority: PRIORITY.HIGH, 
+                        related: [], 
+                        arrows: [] 
+                    });
+                }
             }
             
             let rCounts = [0,0,0]; 
             for(let k=0; k<SIZE; k++) rCounts[g[r][k]]++;
-            if(rCounts[1] === SIZE/2) hints.push({ msg: `Bu satırda zaten yeterince Ateş var`, priority: PRIORITY.HIGH, related: [], arrows: [] });
-            if(rCounts[2] === SIZE/2) hints.push({ msg: `Bu satırda zaten yeterince Su var`, priority: PRIORITY.HIGH, related: [], arrows: [] });
+            if(rCounts[1] === SIZE/2) hints.push({ msg: `Satırda Ateş dengesi sağlandı, boşlukları Su ile doldur.`, priority: PRIORITY.HIGH, related: [], arrows: [] });
+            if(rCounts[2] === SIZE/2) hints.push({ msg: `Satırda Su dengesi sağlandı, boşlukları Ateş ile doldur.`, priority: PRIORITY.HIGH, related: [], arrows: [] });
             
             let cCounts = [0,0,0]; 
             for(let k=0; k<SIZE; k++) cCounts[g[k][c]]++;
-            if(cCounts[1] === SIZE/2) hints.push({ msg: `Bu sütunda zaten yeterince Ateş var`, priority: PRIORITY.HIGH, related: [], arrows: [] });
-            if(cCounts[2] === SIZE/2) hints.push({ msg: `Bu sütunda zaten yeterince Su var`, priority: PRIORITY.HIGH, related: [], arrows: [] });
+            if(cCounts[1] === SIZE/2) hints.push({ msg: `Sütunda Ateş dengesi sağlandı, boşlukları Su ile doldur.`, priority: PRIORITY.HIGH, related: [], arrows: [] });
+            if(cCounts[2] === SIZE/2) hints.push({ msg: `Sütunda Su dengesi sağlandı, boşlukları Ateş ile doldur.`, priority: PRIORITY.HIGH, related: [], arrows: [] });
             
             if(c<SIZE-1 && constraintsH[r][c] && g[r][c+1]!==0) {
                 const mark = constraintsH[r][c]===1 ? '=' : '×';
-                hints.push({ msg: `Sağ komşuyla (${mark}) işaretine dikkat et`, priority: PRIORITY.MEDIUM, related: [{r,c:c+1}], arrows: ['right'] });
+                hints.push({ msg: `Komşu hücreyle aradaki (${mark}) işaretine dikkat et.`, priority: PRIORITY.MEDIUM, related: [{r,c:c+1}], arrows: ['right'] });
             }
             if(c>0 && constraintsH[r][c-1] && g[r][c-1]!==0) {
                 const mark = constraintsH[r][c-1]===1 ? '=' : '×';
-                hints.push({ msg: `Sol komşuyla (${mark}) işaretine dikkat et`, priority: PRIORITY.MEDIUM, related: [{r,c:c-1}], arrows: ['left'] });
+                hints.push({ msg: `Komşu hücreyle aradaki (${mark}) işaretine dikkat et.`, priority: PRIORITY.MEDIUM, related: [{r,c:c-1}], arrows: ['left'] });
             }
             if(r<SIZE-1 && constraintsV[r][c] && g[r+1][c]!==0) {
                 const mark = constraintsV[r][c]===1 ? '=' : '×';
-                hints.push({ msg: `Alt komşuyla (${mark}) işaretine dikkat et`, priority: PRIORITY.MEDIUM, related: [{r:r+1,c}], arrows: ['down'] });
+                hints.push({ msg: `Komşu hücreyle aradaki (${mark}) işaretine dikkat et.`, priority: PRIORITY.MEDIUM, related: [{r:r+1,c}], arrows: ['down'] });
             }
             if(r>0 && constraintsV[r-1][c] && g[r-1][c]!==0) {
                 const mark = constraintsV[r-1][c]===1 ? '=' : '×';
-                hints.push({ msg: `Üst komşuyla (${mark}) işaretine dikkat et`, priority: PRIORITY.MEDIUM, related: [{r:r-1,c}], arrows: ['up'] });
+                hints.push({ msg: `Komşu hücreyle aradaki (${mark}) işaretine dikkat et.`, priority: PRIORITY.MEDIUM, related: [{r:r-1,c}], arrows: ['up'] });
             }
             
             return hints.length > 0 ? hints : null;
+        }
+
+        function wouldCauseTripleElsewhere(tempG, r, c, val) {
+            for(let i=0; i<SIZE; i++) {
+                for(let j=0; j<SIZE-2; j++) {
+                    if(tempG[i][j]&&tempG[i][j]===tempG[i][j+1]&&tempG[i][j]===tempG[i][j+2]) return true;
+                    if(tempG[j][i]&&tempG[j][i]===tempG[j+1][i]&&tempG[j][i]===tempG[j+2][i]) return true;
+                }
+                let r1=0,r2=0,c1=0,c2=0;
+                for(let k=0; k<SIZE; k++) { tempG[i][k]===1?r1++:tempG[i][k]===2?r2++:0; tempG[k][i]===1?c1++:tempG[k][i]===2?c2++:0; }
+                if(r1>SIZE/2 || r2>SIZE/2 || c1>SIZE/2 || c2>SIZE/2) return true;
+            }
+            return false;
         }
 
         function getAllSmartHints(g) {
@@ -818,7 +821,6 @@
             setTimeout(() => {
                 const loadingScreen = document.getElementById('loading');
                 if (loadingScreen && loadingScreen.style.display !== 'none' && !isActive) {
-                    console.warn("Oyun takıldı, otomatik kurtarma başlatılıyor...");
                     localStorage.removeItem('duoLogicSaveV14');
                     location.reload();
                 }
